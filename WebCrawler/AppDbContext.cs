@@ -13,7 +13,8 @@ namespace WebCrawler
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(@"Server=DESKTOP-AAJRE23\SQLEXPRESS;Database=WebScraper;Trusted_Connection=True;MultipleActiveResultSets=true; TrustServerCertificate=True");
+            optionsBuilder.UseSqlServer(@"Server=.\SQLExpress;Database=WebScraper;Trusted_Connection=True;MultipleActiveResultSets=true; TrustServerCertificate=True");
         }
+
     }
 }

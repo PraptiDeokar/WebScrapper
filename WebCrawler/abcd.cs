@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,14 +12,6 @@ namespace WebCrawler
 {
     public class abcd
     {
-        private readonly AppDbContext _db;
-
-        public abcd(AppDbContext db)
-        {
-            _db = db;
-        }
-
-
         private static async Task<string> CallUrl(string fullUrl)
         {
             HttpClient client = new HttpClient();
@@ -27,26 +20,21 @@ namespace WebCrawler
         }
         public static void Main(String[] args)
         {
+
+            AppDbContext db = new AppDbContext();
+
             Console.WriteLine("Enter URL");
             string input = Console.ReadLine();
-
-            // string url = "https://en.wikipedia.org/wiki/List_of_programmers";
-            string url = input;
-            var response = CallUrl(url).Result;
-
+            var response = CallUrl(input).Result;
+            
             HtmlDocument htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(response);
-
-            //  var programmerLinks = htmlDoc.DocumentNode.SelectNodes("//li[not(contains(@class, 'tocsection'))]");
-            // var programmerLinks = htmlDoc.DocumentNode.SelectNodes("//a[@class='name clamp-2']/h2");
-            var modelName = htmlDoc.DocumentNode.SelectNodes("//a[@class='name clamp-2']/h2");
             
+            var modelName = htmlDoc.DocumentNode.SelectNodes("//a[@class='name clamp-2']/h2");
             var price = htmlDoc.DocumentNode.SelectNodes("//span[@class='price']");
-           // Console.WriteLine(modelName + " " + price);
 
             List<string> list1 = new List<string>();
             List<string> list2 = new List<string>();
-
 
             foreach (var name in modelName)
             {
@@ -56,8 +44,9 @@ namespace WebCrawler
             foreach (var name in price)
             {
                 string p = name.InnerText.ToString();
-                string s = (p as string).Replace("₹", String.Empty);
-                list2.Add(s);  
+                string x = (p as string).Replace("₹", String.Empty);
+                string s = (x as string).Replace(",", String.Empty);
+                list2.Add(s);
             }
 
             foreach (var name in list1)
@@ -70,30 +59,27 @@ namespace WebCrawler
                 Console.WriteLine(name);
             }
 
-            StringBuilder sb = new StringBuilder();
-            //foreach (var link in modelName)
-            //{
-            //    sb.AppendLine(link);
-            //}
-
-
-            for(int i = 0; i < list1.Count; i++)
+            //for saving to db
+            for (int i = 0; i < list1.Count; i++)
             {
-                sb.AppendLine(list1[i] + " "+ (list2[i].ToString()));
+                Crawled obj = new Crawled();
+
+                obj.MobileName = list1[i].ToString();
+                obj.Price = Convert.ToInt32(list2[i].ToString());
+                db.crawlData.Add(obj);
+                db.SaveChanges();
+
             }
 
 
+            //to save data in csv
 
+            StringBuilder sb = new StringBuilder();
 
-            //StringBuilder sb = new StringBuilder();
-            //for (int i=0; i<list1.Count; i++)
-            //{
-            //    if (i >= list2.Count) break;
-            //    var rec1 = list1[i];
-            //    var rec2 = list2[i];
-            //    rec1.NewColumn = rec2.ColumnToAdd;
-            //}
-
+            for (int i = 0; i < list1.Count; i++)
+            {
+                sb.AppendLine(list1[i] + " " + (list2[i].ToString()));
+            }
             System.IO.File.WriteAllText("links.csv", sb.ToString());
 
         }
